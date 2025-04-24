@@ -18,6 +18,8 @@ $RECYCLE.BIN/
 .env*
 **/.env*
 
+/docs
+
 # Windows Installer files
 *.cab
 *.msi
