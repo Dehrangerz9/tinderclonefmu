@@ -11,8 +11,6 @@ class Database {
     public static function connect() {
         if (!self::$pdo) {
             $env = parse_ini_file(dirname(__DIR__, 2) . '/db-credentials.env');
-
-
             try {
                 self::$pdo = new PDO(
                     dsn: "pgsql:host={$env['PGHOST']};dbname={$env['PGDATABASE']}",

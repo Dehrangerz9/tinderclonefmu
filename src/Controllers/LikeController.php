@@ -40,7 +40,6 @@ class LikeController {
         }
     }
 
-    // Nova rota para sugestão de usuários para curtir
     public function likeList() {
         session_start();
         header('Content-Type: application/json');
