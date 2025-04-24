@@ -53,18 +53,61 @@ class Like {
     public static function getSugestoes($userId): array {
         $db = Database::connect();
     
-        $stmt = $db->prepare("
+        // Primeiro, buscamos os dados do usuário atual
+        $stmt = $db->prepare("SELECT genero, orientacao, genero_interesse FROM usuarios WHERE id = ?");
+        $stmt->execute([$userId]);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$usuario) {
+            return [];
+        }
+    
+        $genero = $usuario['genero'];
+        $orientacao = $usuario['orientacao'];
+        $genero_interesse = $usuario['genero_interesse'];
+    
+        // Baseado na orientação, definimos os gêneros de interesse
+        $generosAlvo = [];
+    
+        if ($orientacao === 'hetero') {
+            if ($genero === 'masculino') $generosAlvo[] = 'feminino';
+            elseif ($genero === 'feminino') $generosAlvo[] = 'masculino';
+            // Outros casos podem ser tratados conforme sua lógica
+        } elseif ($orientacao === 'Gay') {
+            if ($genero === 'masculino') $generosAlvo[] = 'masculino';
+        } elseif ($orientacao === 'lesbica') {
+            if ($genero === 'feminino') $generosAlvo[] = 'feminino';
+        } elseif (in_array($orientacao, ['Bisexual', 'Pansexual', 'Outro'])) {
+            // Usa diretamente o campo genero_interesse
+            $generosAlvo[] = $genero_interesse;
+        }
+    
+        // Garante que há pelo menos um gênero de interesse
+        if (empty($generosAlvo)) {
+            return [];
+        }
+    
+        // Monta placeholders para os gêneros
+        $placeholders = implode(',', array_fill(0, count($generosAlvo), '?'));
+    
+        // Monta a query considerando a identidade de gênero
+        $query = "
             SELECT id, nome
             FROM usuarios
             WHERE id != ?
+            AND genero IN ($placeholders)
             AND id NOT IN (
                 SELECT quem_foi_curtido FROM curtidas WHERE quem_curtiu = ?
             )
-        ");
-        $stmt->execute([$userId, $userId]);
+        ";
+    
+        $stmt = $db->prepare($query);
+        $params = array_merge([$userId], $generosAlvo, [$userId]);
+        $stmt->execute($params);
     
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
 
     public static function match($user1, $user2): void {
         $db = Database::connect();
