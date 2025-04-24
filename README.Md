@@ -53,8 +53,8 @@ Este é um projeto FULLSTACK em PHP com estrutura MVC (Model-View-Controller), b
 ### 💻 No Linux
 
 ```bash
-git clone https://github.com/seuusuario/seu-projeto.git
-cd seu-projeto
+git clone https://github.com/Dehrangerz9/tinderclonefmu.git
+cd tinderclonefmu
 
 composer install
 
@@ -67,8 +67,8 @@ php -S localhost:8000 -t public
 ### 🪟 No Windows
 
 ```powershell
-git clone https://github.com/seuusuario/seu-projeto.git
-cd seu-projeto
+git clone https://github.com/Dehrangerz9/tinderclonefmu.git
+cd tinderclonefmu
 
 composer install
 
@@ -77,11 +77,6 @@ copy db-credentials.env.example db-credentials.env
 
 php -S localhost:8000 -t public
 ```
-
----
-
-Claro! Aqui está o trecho **refinado e completo** que você pode adicionar na seção **"📂 Configurar o banco de dados"** do `README.md`, com instruções tanto para **criar o banco de dados manualmente**, quanto os **comandos SQL necessários**:
-
 ---
 
 ## 📂 Configurar o banco de dados
