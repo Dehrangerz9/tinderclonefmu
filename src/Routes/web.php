@@ -19,3 +19,8 @@ $router->get(path: '/set-session', action: function () {
     header('Content-Type: application/json');
     echo json_encode(['status' => 'ok', 'user_id' => 1]);
 });
+
+$router->get(path: '/matches', action: function () {
+    require_once __DIR__ . '/matches.php';
+});
+
