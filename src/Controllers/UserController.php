@@ -1,98 +1,229 @@
 <?php 
 namespace Controllers;
 
+use Helpers\JwtHelper;
+use Models\User;
+
 class UserController {
-    public function login() {
-        session_start();
-        header('Content-Type: application/json');
-
-        $email = $_POST['email'] ?? '';
-        $senha = $_POST['senha'] ?? '';
-
-        if (!$email || !$senha) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Email e senha são obrigatórios.']);
-            return;
+    private function getBearerToken() {
+        if (isset($_SERVER["HTTP_AUTHORIZATION"])) {
+            $authorizationHeader = $_SERVER["HTTP_AUTHORIZATION"];
+            if (preg_match(('/Bearer\s(\S+)/'), $authorizationHeader, $matches)) {
+                $token = $matches[1];
+            }
         }
+    }
 
-        $user = \Models\User::findByEmail($email);
+    private function authenticate(){
+        $token = $this->getBearerToken();
 
-        if (!$user || !password_verify($senha, $user['senha'])) {
+        if(!$token){
             http_response_code(401);
-            echo json_encode(['error' => 'Credenciais inválidas.']);
-            return;
+            echo json_encode(['error'=> 'Token não enviado']);
+            exit;
         }
 
-        $_SESSION['user_id'] = $user['id'];
-        echo json_encode(['status' => 'ok', 'message' => 'Login bem-sucedido.']);
+        $decoded = JwtHelper::validateToken($token);
+
+        if(!$decoded){
+            http_response_code(401);
+            echo json_encode(['error'=> 'Token inválido']);
+            exit;
+        }
+
+        return $decoded->user_id;
     }
 
-    public function logout() {
-        session_start();
-        session_destroy();
-        echo json_encode(['status' => 'ok', 'message' => 'Logout feito com sucesso.']);
-    }
-
-    public function register() {
+    public function register(){
+        header('Content-Type: application/json');
         $data = $_POST;
-
-        $requiredFields = ['nome', 'email', 'senha', 'genero', 'orientacao'];
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
+        $required = ['nome', 'email', 'senha', 'genero', 'orientacao'];
+        foreach ($required as $field) {
+            if(empty($data[$field])){
                 http_response_code(400);
-                echo json_encode(['error' => "Campo '$field' é obrigatório."]);
+                echo json_encode(['error'=> "Campo '$field' é obrigatório"]);
                 return;
             }
         }
 
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        if(!filter_var($data["email"], FILTER_VALIDATE_EMAIL)){
             http_response_code(400);
-            echo json_encode(['error' => "Email inválido."]);
+            echo json_encode(["error"=> "Email inválido"]);
             return;
         }
 
-        // Verificar se o email já está cadastrado
-        $existingUser = \Models\User::findByEmail($data['email']);
-        if ($existingUser) {
+        if (User::findByEmail($data["email"])){
             http_response_code(400);
-            echo json_encode(['error' => 'Email já cadastrado.']);
+            echo json_encode(["error"=> "Email já cadastrado."]);
             return;
         }
 
-        $userCreated = \Models\User::create($data);
-        if ($userCreated) {
-            echo json_encode(['success' => 'Usuário registrado com sucesso.']);
+        if(User::create($data)){
+            echo json_encode(["success"=> 'Usuário registrado com sucesso.']);
         } else {
             http_response_code(500);
-            echo json_encode(['error' => 'Erro ao registrar usuário.']);
+            echo json_encode(['error'=> 'Erro ao registrar o usuário']);
         }
     }
 
-    public function recoverPassword() {
-        $email = $_POST['email'] ?? null;
+    public function login(){
+        header('Content-Type: application/json');
+        $email = $_POST['email'];
+        $senha = $_POST['senha'];
 
-        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if(empty($email) || empty($senha)){
             http_response_code(400);
-            echo json_encode(['error' => 'Email inválido.']);
+            echo json_encode(['error'=> 'Email e senha obrigátorios.']);
             return;
         }
 
-        $token = \Models\User::generateResetToken($email);
-        if (!$token) {
+        $user = User::findByEmail($email);
+        if (!$user || !password_verify($senha, $user['senha'])){
+            http_response_code(401);
+            echo json_encode(['error'=> 'Credenciais inválidas']);
+            return;
+        }
+        $token = JwtHelper::generateToken($user['id']);
+        echo json_encode(['success'=> true,'token'=> $token,'logado como: '=> $user]);
+    }
+
+    public function logout(){
+        echo json_encode(['status' => 'ok', 'message' => 'Logout feito.']);    
+    }
+
+    public function recoverPassword(){
+        header('Content-Type: application/json');
+        $email = $_POST['email'] ?? '';
+
+        if(!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)){
+            http_response_code(400);
+            echo json_encode(['error'=> 'Email inválido']);
+            return;
+        }
+
+        $token = User::generateResetToken($email);
+        if (!$token){
+            http_response_code(404);
+            echo json_encode(['error'=> 'Usuário não encontrado']);
+            return;
+        }
+
+        $link = "https://seusite.com/reset-password?token=$token";
+        mail($email, "Recuperação de senha", "Clique aqui para redefinir: $link");
+
+        echo json_encode(['sucess'=>"Email de recuperação enviado"]);
+    }
+
+    public function resetPassword(){
+        header('Content-Type: application/json');
+        $token = $_POST['token'] ?? '';
+        $newPassword = $_POST['newPassword'] ??'';
+        $user = User::findByResetToken($token);
+        if(!$user){
+            http_response_code(400);
+            echo json_encode(['error'=> 'Token inválido ou expirado']);
+            return;
+        }
+
+        User::updatePassword($user['id'],$newPassword);
+        echo json_encode(['sucess'=> 'Senha redefinida com sucess']);
+    }
+
+    public function profile(){
+        header('Content-Type: application/json');
+        $userId = $this->authenticate();
+        $user = User::findById($userId);
+
+        unset($user['senha']);
+        echo json_encode($user);
+    }
+
+    public function updateProfile() {
+        header('Content-Type: application/json');
+        $userId = $this->authenticate();
+        $data = $_POST;
+
+        if (User::updateProfile($userId, $data)) {
+            echo json_encode(['success' => 'Perfil atualizado.']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Erro ao atualizar perfil.']);
+        }
+    }
+
+    public function checkAuth() {
+        header('Content-Type: application/json');
+        $this->authenticate();
+        echo json_encode(['authenticated' => true]);
+    }
+
+    public function verifyToken() {
+        $this->checkAuth();
+    }
+
+    public function changePassword() {
+        header('Content-Type: application/json');
+        $userId = $this->authenticate();
+
+        $oldPassword = $_POST['oldPassword'] ?? '';
+        $newPassword = $_POST['newPassword'] ?? '';
+
+        $user = User::findById($userId);
+        if (!password_verify($oldPassword, $user['senha'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Senha antiga incorreta.']);
+            return;
+        }
+
+        User::updatePassword($userId, $newPassword);
+        echo json_encode(['success' => 'Senha alterada com sucesso.']);
+    }
+
+    public function sendVerificationEmail() {
+        header('Content-Type: application/json');
+        $email = $_POST['email'] ?? '';
+
+        $user = User::findByEmail($email);
+        if (!$user) {
             http_response_code(404);
             echo json_encode(['error' => 'Usuário não encontrado.']);
             return;
         }
 
-        $link = "https://seusite.com/reset-password?token=$token";
+        $token = User::generateVerificationToken($user['id']);
+        $link = "https://seusite.com/verify-email/$token";
+        mail($email, "Verifique seu email", "Clique aqui para confirmar: $link");
 
-        // Enviar email
-        mail(
-            $email,
-            "Recuperação de senha",
-            "Clique no link para redefinir sua senha: $link"
-        );
+        echo json_encode(['success' => 'Email de verificação enviado.']);
+    }
 
-        echo json_encode(['success' => 'Link de recuperação enviado para o e-mail.']);
+    public function verifyEmail($token) {
+        header('Content-Type: application/json');
+        if (User::verifyEmail($token)) {
+            echo json_encode(['success' => 'Email verificado.']);
+        } else {
+            http_response_code(400);
+            echo json_encode(['error' => 'Token inválido.']);
+        }
+    }
+
+    public function resendVerification() {
+        header('Content-Type: application/json');
+        $userId = $this->authenticate();
+        $user = User::findById($userId);
+
+        $token = User::generateVerificationToken($userId);
+        $link = "https://seusite.com/verify-email/$token";
+        mail($user['email'], "Reenvio de verificação", "Clique aqui para confirmar: $link");
+
+        echo json_encode(['success' => 'Email de verificação reenviado.']);
+    }
+
+    public function accountStatus() {
+        header('Content-Type: application/json');
+        $userId = $this->authenticate();
+        $user = User::findById($userId);
+
+        echo json_encode(['status' => $user['status']]);
     }
 }

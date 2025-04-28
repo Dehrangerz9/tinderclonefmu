@@ -478,3 +478,4 @@ composer.lock
 *.sass.map
 *.scss.map
 db-credentials.env
+.vercel
