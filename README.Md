@@ -136,10 +136,17 @@ CREATE TABLE usuarios (
     genero genero_enum NOT NULL,
     bio TEXT,
     nascimento DATE NOT NULL,
+    idade INT,                          
+    gostos TEXT[],                     
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     genero_interesse genero_interesse_enum,
-    orientacao orientacao_enum NOT NULL
+    orientacao orientacao_enum NOT NULL,
+    online BOOLEAN DEFAULT FALSE,       
+    ativo BOOLEAN DEFAULT FALSE,        
+    token VARCHAR(255),                  
+    data_ultimo_login TIMESTAMP
 );
+
 
 -- Tabela de fotos de perfil
 CREATE TABLE fotos (
