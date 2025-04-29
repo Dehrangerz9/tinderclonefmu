@@ -24,3 +24,6 @@ $router->get(path: '/set-session', action: function () {
 $router->get(path: '/matches', action: function () {
     require_once __DIR__ . '/../Views/matches.php';
 });
+$router->get(path: '/info.php', action: function () {
+    require_once __DIR__ . '/../../info.php';
+});
