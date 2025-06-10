@@ -3,7 +3,7 @@ namespace Models;
 
 class Message {
     private $conn;
-    private $table = 'messages';
+    private $table = 'mensagens';
 
     public $id;
     public $match_id;
@@ -84,12 +84,12 @@ class Message {
         $query = 'SELECT m.match_id, 
                         MAX(m.enviada_em) AS last_message_time,
                         CASE 
-                        WHEN mt.usuario1_id = :user_id THEN u2.name
-                        ELSE u1.name
+                        WHEN mt.usuario1_id = :user_id THEN u2.nome
+                        ELSE u1.nome
                         END AS partner_name,
                         CASE 
-                        WHEN mt.usuario1_id = :user_id THEN u2.profile_picture
-                        ELSE u1.profile_picture
+                        WHEN mt.usuario1_id = :user_id THEN u2.gostos
+                        ELSE u1.gostos
                         END AS partner_picture
                 FROM ' . $this->table . ' m
                 JOIN matches mt ON mt.id = m.match_id
