@@ -1,11 +1,12 @@
 <?php
+namespace Controllers;
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../config/Database.php';
-require_once '../models/Message.php';
+use Core\Database;
+use Models\Message;
 
 class ChatController {
     private $db;

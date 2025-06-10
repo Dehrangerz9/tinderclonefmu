@@ -24,6 +24,12 @@ $router->post(path: '/api/like', action: 'LikeController@likeUser');  // Curtir 
 $router->get(path: '/api/user-matches', action: 'LikeController@listMatches');  // Lista de matches
 $router->get(path: '/api/to-like-list', action: 'LikeController@likeList');  // Lista de usuários para curtir
 
+//rota do chat
+
+$router->get('/api/chat','ChatController@getChatList');
+$router->get('/api/chat/messages','ChatController@getMessages');
+$router->post('/api/chat/send','ChatController@sendMessage');
+
 // Rota temporária para simular login com sessão (para testes)
 $router->get(path: '/api/set-session', action: function () {
     session_start();

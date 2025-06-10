@@ -1,4 +1,6 @@
 <?php
+namespace Models;
+
 class Message {
     private $conn;
     private $table = 'messages';
@@ -80,18 +82,23 @@ class Message {
     // Obter lista de chats
     public function getChatList($user_id) {
         $query = 'SELECT m.match_id, 
-                         MAX(m.created_at) as last_message_time,
-                         SUM(CASE WHEN m.receiver_id = :user_id AND m.read_status = 0 THEN 1 ELSE 0 END) as unread_count,
-                         u.name as partner_name,
-                         u.profile_picture as partner_picture
-                  FROM ' . $this->table . ' m
-                  JOIN users u ON (u.id = CASE 
-                                          WHEN m.sender_id = :user_id THEN m.receiver_id 
-                                          ELSE m.sender_id 
-                                        END)
-                  WHERE m.sender_id = :user_id OR m.receiver_id = :user_id
-                  GROUP BY m.match_id, partner_name, partner_picture
-                  ORDER BY last_message_time DESC';
+                        MAX(m.enviada_em) AS last_message_time,
+                        CASE 
+                        WHEN mt.usuario1_id = :user_id THEN u2.name
+                        ELSE u1.name
+                        END AS partner_name,
+                        CASE 
+                        WHEN mt.usuario1_id = :user_id THEN u2.profile_picture
+                        ELSE u1.profile_picture
+                        END AS partner_picture
+                FROM ' . $this->table . ' m
+                JOIN matches mt ON mt.id = m.match_id
+                JOIN usuarios u1 ON u1.id = mt.usuario1_id
+                JOIN usuarios u2 ON u2.id = mt.usuario2_id
+                WHERE mt.usuario1_id = :user_id OR mt.usuario2_id = :user_id
+                GROUP BY m.match_id, partner_name, partner_picture
+                ORDER BY last_message_time DESC';
+
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':user_id', $user_id);
