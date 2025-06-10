@@ -12,9 +12,10 @@ class UserController {
                 $token = $matches[1];
             }
         }
+        return null;
     }
 
-    private function authenticate(){
+   /* private function authenticate(){
         $token = $this->getBearerToken();
 
         if(!$token){
@@ -32,7 +33,20 @@ class UserController {
         }
 
         return $decoded->user_id;
+    }*/
+
+    public function authenticate(){
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $token = $matches[1];
+        $payload = JwtHelper::validateToken($token);
+        return $payload->user_id ?? null;
     }
+    http_response_code(401);
+    echo json_encode(['error' => 'Token inválido ou ausente.']);
+    exit;
+}
+
 
     public function register(){
         header('Content-Type: application/json');

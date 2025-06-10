@@ -11,7 +11,7 @@ $router->get(path: '/api/profile', action: 'UserController@profile');    // Reto
 $router->patch(path: '/api/profile', action: 'UserController@updateProfile');  // Atualiza os dados do perfil do usuário
 $router->get(path: '/api/check-auth', action: 'UserController@checkAuth');  // Verifica se o usuário está autenticado
 $router->get(path: '/api/verify-token', action: 'UserController@verifyToken');  // Verifica a validade do token JWT
-$router->post(path: '/api/change-password', action: 'UserController@changePassword');  // Altera a senha do usuário
+$router->patch(path: '/api/password', action: 'UserController@changePassword');  // Altera a senha do usuário
 $router->post(path: '/api/send-verification-email', action: 'UserController@sendVerificationEmail');  // Envia email para verificar o email do usuário
 $router->get(path: '/api/verify-email/{token}', action: 'UserController@verifyEmail');  // Verifica o código de email enviado para o usuário após o registro
 $router->post(path: '/api/resend-verification', action: 'UserController@resendVerification');  // Reenvia o código de verificação de email

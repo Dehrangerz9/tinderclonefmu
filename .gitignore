@@ -479,3 +479,6 @@ composer.lock
 *.scss.map
 db-credentials.env
 .vercel
+
+
+/photos/*
