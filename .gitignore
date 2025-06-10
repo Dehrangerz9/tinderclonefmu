@@ -482,3 +482,4 @@ db-credentials.env
 
 
 /photos/*
+!/photos/.gitkeep
