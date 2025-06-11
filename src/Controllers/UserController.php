@@ -50,8 +50,15 @@ class UserController {
 
     public function register(){
         header('Content-Type: application/json');
-        $data = $_POST;
-        $required = ['nome', 'email', 'senha', 'genero', 'orientacao'];
+        $json = file_get_contents('php://input');
+
+        $data = json_decode($json,true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode(['error' => 'JSON inválido']);
+            return;
+        }        
+        $required = ['nome', 'email', 'senha', 'genero', 'orientacao','genero_interesse'];
         foreach ($required as $field) {
             if(empty($data[$field])){
                 http_response_code(400);
@@ -82,8 +89,16 @@ class UserController {
 
     public function login(){
         header('Content-Type: application/json');
-        $email = $_POST['email'];
-        $senha = $_POST['senha'];
+        $json = file_get_contents('php://input');
+
+        $data = json_decode($json,true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode(['error' => 'JSON inválido']);
+            return;
+        }        
+        $email = $data['email'];
+        $senha = $data['senha'];
 
         if(empty($email) || empty($senha)){
             http_response_code(400);
@@ -245,21 +260,16 @@ class UserController {
     
     public function updateProfilePicture()
 {
-    session_start();
+    header('Content-Type: application/json');
 
-    /*
+    // Pegue os dados enviados via multipart/form-data
+    $userId = $_POST['id'] ?? null;
 
-    if (!isset($_SESSION['user_id'])) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Usuário não autenticado.']);
+    if (empty($userId)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Informe o id do usuário.']);
         return;
     }
-
-    $userId = $_SESSION['user_id'];
-
-    */
-
-    $userId = 11;
 
     if (!isset($_FILES['profile_picture'])) {
         http_response_code(400);
@@ -291,26 +301,21 @@ class UserController {
         mkdir($uploadDir, 0755, true);
     }
 
-
     if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
         http_response_code(500);
         echo json_encode(['error' => 'Erro ao salvar a imagem.']);
         return;
     }
 
-    // Salva o caminho relativo (ex: "photos/profile_123.jpg")
     $relativePath = 'photos/' . $newFileName;
 
-    // Atualiza no banco (assumindo que você tem um UserModel com updateProfilePicture)
-    //require_once __DIR__ . '/../Models/User.php';
-    //$pdo = new \PDO('postgresql://tinder-clone_owner:npg_Llv0AVC9SwFW@ep-shy-wind-ac11yuxh-pooler.sa-east-1.aws.neon.tech/tinder-clone?sslmode=require', 'tinder-clone_owner', 'npg_Llv0AVC9SwFW');
-    //$user = new User($pdo);
     if (User::updateProfilePicture($userId, $relativePath)) {
-        echo json_encode(['success' => true, 'path' => $relativePath]);
+        echo json_encode(['success' => true, 'newImageUrl' => $relativePath]);
     } else {
         http_response_code(500);
         echo json_encode(['error' => 'Erro ao atualizar no banco de dados.']);
     }
 }
+
 
 }

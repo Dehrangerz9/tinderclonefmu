@@ -18,14 +18,17 @@ class User {
     public static function create($data) {
         $db = Database::connect();
     
-        $stmt = $db->prepare("INSERT INTO usuarios (nome, email, senha, genero, orientacao, nascimento) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $db->prepare("INSERT INTO usuarios (nome, email, senha, genero, orientacao, nascimento,genero_interesse,idade,bio) VALUES (?, ?, ?, ?, ?, ?, ?,?,?)");
         return $stmt->execute([
             $data['nome'],
             $data['email'],
             password_hash($data['senha'], PASSWORD_DEFAULT),
             $data['genero'],
             $data['orientacao'],
-            $data['nascimento']
+            $data['nascimento'],
+            $data['genero_interesse'],
+            $data['idade'],
+            $data['bio']
         ]);
     }
 
@@ -138,32 +141,17 @@ public static function updateProfilePicture($userId, $path)
     $db = Database::connect();
 
     try {
-        $db->beginTransaction();
-
-        // 1️⃣ Desmarcar todas as fotos principais
-        $stmt1 = $db->prepare("UPDATE fotos SET is_main_photo = FALSE WHERE usuario_id = ?");
-        if (!$stmt1->execute([$userId])) {
-            throw new \Exception("Erro ao desmarcar fotos antigas.");
+        $stmt = $db->prepare("UPDATE usuarios SET foto_perfil = ? WHERE id = ?");
+        if (!$stmt->execute([$path, $userId])) {
+            throw new \Exception("Erro ao atualizar a foto de perfil.");
         }
 
-        // 2️⃣ Inserir a nova foto como principal
-        $stmt2 = $db->prepare("INSERT INTO fotos (usuario_id, caminho, is_main_photo) VALUES (?, ?, TRUE) RETURNING id");
-        if (!$stmt2->execute([$userId, $path])) {
-            throw new \Exception("Erro ao inserir nova foto.");
-        }
-
-        $newPhotoId = $stmt2->fetchColumn();
-
-        $db->commit();
-
-        return $newPhotoId;
+        return true;
     } catch (\Exception $e) {
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
         throw new \Exception("Erro ao atualizar foto de perfil: " . $e->getMessage());
     }
 }
+
 
 
 
